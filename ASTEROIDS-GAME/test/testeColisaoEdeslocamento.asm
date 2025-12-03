@@ -273,7 +273,7 @@ game_loop:
 	
 	# --- ASTEROIDE 1 (ESQUERDA) ---
 	addi $t4, $t4, 1        # Incrementa contador
-	addi $at, $0, 20        # DEFINIR VELOCIDADE (Maior = Mais lento)
+	addi $at, $0, 60       # DEFINIR VELOCIDADE (Maior = Mais lento)
 	bne $t4, $at, skip_ast1
 	add $t4, $0, $0         # Reseta contador
 	jal update_ast_esquerda # Move
@@ -281,7 +281,7 @@ skip_ast1:
 
 	# --- ASTEROIDE 2 (CIMA) ---
 	addi $t5, $t5, 1
-	addi $at, $0, 30        # VELOCIDADE LENTA
+	addi $at, $0, 90        
 	bne $t5, $at, skip_ast2
 	add $t5, $0, $0
 	jal update_ast_cima
@@ -290,7 +290,7 @@ skip_ast2:
 
 	# --- ASTEROIDE 3 (BAIXO) ---
 	addi $t6, $t6, 1
-	addi $at, $0, 10        # VELOCIDADE RÁPIDA
+	addi $at, $0, 165        
 	bne $t6, $at, skip_ast3
 	
 	add $t6, $0, $0
@@ -300,7 +300,7 @@ skip_ast3:
 
 	# --- ASTEROIDE 4 (DIREITA) ---
 	addi $t7, $t7, 1
-	addi $at, $0, 5         # VELOCIDADE MUITO RÁPIDA (Para testar se aparece)
+	addi $at, $0, 65         
 	bne $t7, $at, skip_ast4
 	
 	add $t7, $0, $0
