@@ -230,8 +230,8 @@ setup_inicial:
 	lui $s3, 0x1001 
 	addi $s3, $s3, 29952
 	
-	lui $s4, 0x1001 
-	addi $s4, $s4, 16864 # ASTEROIDE DIREITA
+	lui $s5, 0x1001 
+	addi $s5, $s5, 16864 # ASTEROIDE DIREITA
 
 	# --- ZERA CONTADORES DE VELOCIDADE ---
 	add $t4, $0, $0   # Contador Asteroide 1 (Esq)
@@ -273,7 +273,7 @@ game_loop:
 	
 	# --- ASTEROIDE 1 (ESQUERDA) ---
 	addi $t4, $t4, 1        # Incrementa contador
-	addi $at, $0, 60       # DEFINIR VELOCIDADE (Maior = Mais lento)
+	addi $at, $0, 70       # DEFINIR VELOCIDADE (Maior = Mais lento)
 	bne $t4, $at, skip_ast1
 	add $t4, $0, $0         # Reseta contador
 	jal update_ast_esquerda # Move
@@ -281,7 +281,7 @@ skip_ast1:
 
 	# --- ASTEROIDE 2 (CIMA) ---
 	addi $t5, $t5, 1
-	addi $at, $0, 90        
+	addi $at, $0, 100        
 	bne $t5, $at, skip_ast2
 	add $t5, $0, $0
 	jal update_ast_cima
@@ -300,7 +300,7 @@ skip_ast3:
 
 	# --- ASTEROIDE 4 (DIREITA) ---
 	addi $t7, $t7, 1
-	addi $at, $0, 65         
+	addi $at, $0, 70         
 	bne $t7, $at, skip_ast4
 	
 	add $t7, $0, $0
@@ -383,12 +383,12 @@ update_ast_baixo:
 
 update_ast_direita:
 	add $s7, $ra, $0
-	add $a0, $s4, $0 
+	add $a0, $s5, $0 
 	jal desenha_bloco_asteroide_preto # Apaga
 	
-	addi $s4, $s4, -4       # Move ESQUERDA
-	beq $s4, $s0, fimJogo   # Colisão?
-	add $a0, $s4, $0
+	addi $s5, $s5, -4       # Move ESQUERDA
+	beq $s5, $s0, fimJogo   # Colisão?
+	add $a0, $s5, $0
 	jal desenha_bloco_asteroide_branco # Desenha
 	jr $s7
 
