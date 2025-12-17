@@ -1,16 +1,14 @@
 .text
 
-# ========================================================================
-# TELA DE SPLASH (Intro) - MANTIDA
-# ========================================================================
+# TELA DE SPLASH (Intro)
 main:
-    # 1. Configura Base do Display
-    lui $t0, 0x1001         # Base do Display
+    # . Configura Base do Display
+    lui $t0, 0x1001
     
-    # 2. Limpa a tela (Fundo Preto)
-    addi $t1, $0, 0x000000  # Cor Preta
+    # . Limpa a tela (Fundo Preto)
+    addi $t1, $0, 0x000000 
     addi $t2, $0, 8192      # Total pixels (128x64)
-    add  $t3, $t0, $0       # Copia endereço base
+    add  $t3, $t0, $0       
 loop_clear_splash:
     beq $t2, $0, desenha_texto_splash
     sw $t1, 0($t3)
@@ -20,13 +18,14 @@ loop_clear_splash:
     j loop_clear_splash
 
 desenha_texto_splash:
-    # --- TÍTULO: ASTEROIDS (Vermelho) ---
+    # TÍTULO: ASTEROIDS (Vermelho)
     addi $a1, $0, 0xFF0000  # Cor Vermelha
     addi $a0, $t0, 14476    # Posição Centro-Cima
     
     jal draw_A
     addi $a0, $a0, 16
     jal draw_S
+
     addi $a0, $a0, 16
     jal draw_T
     addi $a0, $a0, 16
@@ -42,17 +41,16 @@ desenha_texto_splash:
     addi $a0, $a0, 16
     jal draw_S
 
-    # --- SUBTÍTULO: BY CHAD AND AVILA (Branco) ---
+    # SUBTÍTULO: BY CHAD AND AVILA (Branco)
     addi $a1, $0, 0xFFFFFF  # Cor Branca
     addi $a0, $t0, 21624    
     
-    # "BY"
     jal draw_B
     addi $a0, $a0, 16
     jal draw_Y
+
     addi $a0, $a0, 16
     addi $a0, $a0, 16       # Espaço
-    # "CHAD"
     jal draw_C
     addi $a0, $a0, 16
     jal draw_H
@@ -62,11 +60,9 @@ desenha_texto_splash:
     jal draw_D
     addi $a0, $a0, 16
     addi $a0, $a0, 16       # Espaço
-    # "E"
     jal draw_E
     addi $a0, $a0, 16
     addi $a0, $a0, 16       # Espaço
-    # "AVILA"
     jal draw_A
     addi $a0, $a0, 16
     jal draw_V
@@ -76,21 +72,58 @@ desenha_texto_splash:
     jal draw_L
     addi $a0, $a0, 16
     jal draw_A
+
+# --- NOVA SEÇÃO: BARRA DE LOADING COM SOM ---
+    addi $s0, $t0, 28288    # Endereço inicial da barra
+    addi $t4, $0, 0x00FF00  # Cor Verde
+    addi $t5, $0, 64        # Tamanho da barra (64 pixels)
+
+loop_loading:
+    beq $t5, $zero, fim_loading
     
-    # 3. Espera 3 Segundos
+    # 1. Desenha os pixels da barra
+    sw $t4, 0($s0)          
+    sw $t4, 512($s0)        
+    sw $t4, 32768($s0)      
+    sw $t4, 33280($s0)     
+    
+    # 2. LÓGICA DE SOM (MIDI Out)
+    li $v0, 31              # Syscall para tocar nota MIDI (assíncrono)
+    
+    
+    li $a0, 104             
+    sub $a0, $a0, $t5    
+    
+    li $a1, 150             # Duração do som (ms)
+    li $a2, 80              # Instrumento: Square Lead (Arcade Style)
+    li $a3, 70              # Volume (0-127)
+    syscall
+    
+    # 3. Delay entre os pixels
     li $v0, 32
-    li $a0, 3000
+    li $a0, 45              # Ajustado para 45ms para sincronizar com o som
+    syscall
+    
+    addi $s0, $s0, 4        # Avança para o próximo pixel
+    addi $t5, $t5, -1       # Decrementa contador
+    j loop_loading
+
+fim_loading:
+    # Som final 
+    li $v0, 31
+    li $a0, 72              # Nota C5
+    li $a1, 600             # Nota longa
+    li $a2, 81              # Instrumento: Sawtooth
+    li $a3, 100             # Volume alto
     syscall
 
-    # 4. Vai para o jogo
-    j inicio_jogo        
+    li $v0, 32
+    li $a0, 800           
+    syscall
 
-# ========================================================================
-# ALFABETO (MANTIDO)
-# ========================================================================
-# ... (Funções de letras originais mantidas para economizar espaço visual,
-#      elas funcionam exatamente como antes)
+    j inicio_jogo    
 
+# ALFABETO
 draw_A: add $t9, $ra, $0
     sw $a1, 4($a0)
     sw $a1, 32772($a0)
@@ -375,7 +408,7 @@ inicio_jogo:
 	add $2, $0, $0
 	lui $8, 0x1001 
 
-# --- BACKGROUND (PRETO) ---
+# BACKGROUND (PRETO)
 	addi $10, $0, 8192      
 	addi $9, $0, 0x000000   
 
@@ -387,7 +420,7 @@ loop_bg:
 	addi $10, $10, -1
 	j loop_bg
 
-# --- ESTRELAS ---
+# ESTRELAS
 estrelas: 
 	# Cinzas
 	addi $9, $0, 0xcfd8dc 
@@ -427,7 +460,7 @@ estrelas:
 	sw $9, 0($8)
 	sw $9, 32768($8)
 
-# --- VIDAS (CORAÇÕES) ---
+# VIDAS (CORAÇÕES)
 desenha_vidas:
 	addi $11, $0, 0xFFFFFF  
 	addi $12, $0, 0xFF0000  
@@ -498,15 +531,13 @@ loop_vidas:
 	addi $13, $13, -1
 	j loop_vidas
 
-# ========================================================================
-# . CONFIGURAÇÃO E LOOP PRINCIPAL 
-# ========================================================================
+# CONFIGURAÇÃO E LOOP PRINCIPAL 
 
 setup_inicial:
-    # --- CONFIGURA VIDAS E PLACAR ---
+    # CONFIGURA VIDAS E PLACAR
     addi $v1, $0, 3        # 3 Vidas
     
-    # --- NOVO: CONFIGURA PLACAR ---
+    # NOVO: CONFIGURA PLACAR
     xor $fp, $fp, $fp      # Zera a Pontuação ($fp)
     xor $gp, $gp, $gp      # Zera o Cronômetro ($gp)
     
@@ -514,17 +545,17 @@ setup_inicial:
     jal draw_score_logic
 
 reset_fase:
-    # --- POSIÇÃO DA NAVE (CENTRO) ---
+    # POSIÇÃO DA NAVE (CENTRO)
     lui $s0, 0x1001
     addi $s0, $s0, 16640   # Centro da tela
     
-    # --- RESET DA BALA ---
+    # RESET DA BALA
     add $s6, $0, $0        # Sem bala ativa
     add $s7, $0, $0        # Sem velocidade
     addi $t8, $0, -512     # Direção padrão (Cima)
     add $s4, $0, $0        # Timer da bala zerado
 
-    # --- CONFIGURAÇÃO DOS ASTEROIDES ---
+    # CONFIGURAÇÃO DOS ASTEROIDES
     lui $s1, 0x1001 
     addi $s1, $s1, 16392 # Esq
     lui $s2, 0x1001 
@@ -534,13 +565,13 @@ reset_fase:
     lui $s5, 0x1001 
     addi $s5, $s5, 16864 # Dir
 
-    # --- ZERA CONTADORES ---
+    # ZERA CONTADORES
     add $t4, $0, $0   # Esq
     add $t5, $0, $0   # Cima
     add $t6, $0, $0   # Baixo
     add $t7, $0, $0   # Dir
 
-    # --- DESENHA A NAVE INICIAL ---
+    # DESENHA A NAVE INICIAL
     addi $9, $0, 0xFFFFFF 
     add $8, $s0, $0
     addi $20, $8, 32768
@@ -555,9 +586,8 @@ reset_fase:
     sw $9, 516($20)  # Asa Dir
 
 game_loop:
-    # ==========================================================
-    # 0. ATUALIZA PONTUAÇÃO (TEMPO DE SOBREVIVÊNCIA)
-    # ==========================================================
+    # ATUALIZA PONTUAÇÃO (TEMPO DE SOBREVIVÊNCIA)
+    
     addi $gp, $gp, 1        # Incrementa Cronômetro
     addi $at, $0, 20        # Velocidade do Score (Aumente p/ ficar mais lento)
     bne $gp, $at, skip_score
@@ -568,9 +598,8 @@ game_loop:
 
 skip_score:
 
-    # ==========================================================
-    # 1. ATUALIZA BALA
-    # ==========================================================
+    # ATUALIZA BALA
+    
     beq $s6, $0, skip_bala
     
     addi $s4, $s4, 1
@@ -582,9 +611,7 @@ skip_score:
     
 skip_bala:
 
-    # ==========================================================
-    # 2. MOVIMENTO DOS ASTEROIDES (SPEED HARD!)
-    # ==========================================================
+    # MOVIMENTO DOS ASTEROIDES (SPEED HARD!)
     
     # Asteroide 1 (Esquerda)
     addi $t4, $t4, 1        
@@ -658,9 +685,7 @@ skip_ast3:
     jal desenha_bloco_comum_interno
 skip_ast4:
 
-# ==========================================================
-# 3. LEITURA DE TECLADO E DESENHO DA NAVE
-# ==========================================================
+# LEITURA DE TECLADO E DESENHO DA NAVE
 	
 check_teclado:
 	lui $t0, 0xffff        
@@ -670,11 +695,11 @@ check_teclado:
 
 	lw $k0, 4($t0)         
 	
-	# --- TIRO (Espaço = 32) ---
+	# TIRO (Espaço = 32)
 	addi $t2, $0, 32
 	beq $k0, $t2, atirar
 
-	# --- MOVIMENTO DA NAVE ---
+	# MOVIMENTO DA NAVE
 	addi $a0, $0, 0x000000
 	jal pinta_quadrado_centro 
 
@@ -697,9 +722,7 @@ check_teclado:
 	
 	j delay 
 
-# ========================================================================
-# . FUNÇÕES AUXILIARES
-# ========================================================================
+# FUNÇÕES AUXILIARES
 
 delay:
 	li $v0, 32
@@ -714,7 +737,7 @@ atirar:
     add $s4, $0, $0        
     j delay
 
-# --- LÓGICA DE DESENHO DO PLACAR (NUMÉRICO) ---
+# LÓGICA DE DESENHO DO PLACAR (NUMÉRICO)
 draw_score_logic:
     add $t9, $ra, $0        # Salva retorno
     
@@ -722,7 +745,7 @@ draw_score_logic:
     lui $a0, 0x1001
     addi $a0, $a0, 1044     # Posição Topo Esquerda
 
-    # --- Separar Digitos ---
+    # Separar Digitos
     add $t0, $fp, $0        # Copia score total
 
     # Milhares
@@ -755,12 +778,41 @@ draw_score_logic:
     
     jr $t9
 
+# --- NOVA FUNÇÃO DE LIMPEZA DO DÍGITO (CORRIGIDA) ---
+# Usamos $t1 e $t2 para não conflitar com $t4 e $t5 (Asteroides)
+
+clear_digit_area:
+    addi $t3, $0, 0x000000  # Cor Preta
+    add $t1, $a0, $0        # Copia endereço base
+    addi $t2, $0, 5         # 5 linhas de altura
+loop_clear_digit:
+    beq $t2, $0, end_clear_digit
+    # Limpa os 3 pixels da linha (largura 3) + Shadow Buffer
+    sw $t3, 0($t1)
+    sw $t3, 32768($t1)
+    sw $t3, 4($t1)
+    sw $t3, 32772($t1)
+    sw $t3, 8($t1)
+    sw $t3, 32776($t1)
+    
+    addi $t1, $t1, 512      # Desce uma linha (128px * 4bytes)
+    addi $t2, $t2, -1
+    j loop_clear_digit
+end_clear_digit:
+    jr $ra
+# ----------------------------------------
+
 draw_digit_selector:
     # Escolhe qual numero desenhar com base em $a2
-    # Precisamos limpar a área antes de desenhar o novo numero
-    # (Opcional se o fundo for preto e desenharmos tudo, mas melhor garantir)
+    # AGORA COM LIMPEZA AUTOMÁTICA
     
-    sw $a1, 0($a0) # Dummy write para garantir
+    addi $sp, $sp, -4       # Salva endereço de retorno na pilha
+    sw $ra, 0($sp)
+    
+    jal clear_digit_area    # Limpa o quadrado antes de desenhar
+    
+    lw $ra, 0($sp)          # Recupera endereço de retorno
+    addi $sp, $sp, 4
     
     beq $a2, 0, draw_0
     beq $a2, 1, draw_1
@@ -774,332 +826,263 @@ draw_digit_selector:
     beq $a2, 9, draw_9
     jr $ra
 
-# --- SPRITES NUMÉRICOS (3x5) ---
-# Usam $a0 como base e $a1 como cor.
-# Shadow buffer incluso (+32768)
+# ==========================================
+# SPRITES NUMÉRICOS 3x5 (ESTILO ARCADE)
+# ==========================================
 
 draw_0:
-    sw $a1, 0($a0)       
+    # Formato: Caixa fechada
+    sw $a1, 0($a0)          # Topo
+    sw $a1, 4($a0)
+    sw $a1, 8($a0)
+    sw $a1, 512($a0)        # Lados
+    sw $a1, 520($a0)
+    sw $a1, 1024($a0)       # Lados
+    sw $a1, 1032($a0)
+    sw $a1, 1536($a0)       # Lados
+    sw $a1, 1544($a0)
+    sw $a1, 2048($a0)       # Base
+    sw $a1, 2052($a0)
+    sw $a1, 2056($a0)
+    # Shadow Buffer
     sw $a1, 32768($a0)
-    sw $a1, 4($a0)       
     sw $a1, 32772($a0)
-    sw $a1, 8($a0)       
     sw $a1, 32776($a0)
-    sw $a1, 512($a0)     
     sw $a1, 33280($a0)
-    sw $a1, 520($a0)     
     sw $a1, 33288($a0)
-    sw $a1, 1024($a0)    
     sw $a1, 33792($a0)
-    sw $a1, 1032($a0)    
     sw $a1, 33800($a0)
-    sw $a1, 1536($a0)    
     sw $a1, 34304($a0)
-    sw $a1, 1544($a0)    
     sw $a1, 34312($a0)
-    sw $a1, 2048($a0)    
     sw $a1, 34816($a0)
-    sw $a1, 2052($a0)    
     sw $a1, 34820($a0)
-    sw $a1, 2056($a0)    
     sw $a1, 34824($a0)
-    # Limpa meio (caso fosse 8)
-    addi $t3, $0, 0x000000
-    sw $t3, 1028($a0)    
-    sw $t3, 33796($a0)
     jr $ra
 
 draw_1:
-    addi $t3, $0, 0x000000 # Limpa laterais
-    sw $t3, 0($a0)       
-    sw $t3, 32768($a0)
-    sw $t3, 8($a0)       
-    sw $t3, 32776($a0)
-    sw $t3, 512($a0)     
-    sw $t3, 33280($a0)
-    sw $t3, 520($a0)     
-    sw $t3, 33288($a0)
-    sw $t3, 1024($a0)    
-    sw $t3, 33792($a0)
-    sw $t3, 1032($a0)    
-    sw $t3, 33800($a0)
-    sw $t3, 1536($a0)    
-    sw $t3, 34304($a0)
-    sw $t3, 1544($a0)    
-    sw $t3, 34312($a0)
-    sw $t3, 2048($a0)    
-    sw $t3, 34816($a0)
-    sw $t3, 2056($a0)    
-    sw $t3, 34824($a0)
-    
-    sw $a1, 4($a0)       
+    # Formato: Linha centralizada
+    sw $a1, 4($a0)
+    sw $a1, 516($a0)
+    sw $a1, 1028($a0)
+    sw $a1, 1540($a0)
+    sw $a1, 2052($a0)
+    # Shadow
     sw $a1, 32772($a0)
-    sw $a1, 516($a0)    
     sw $a1, 33284($a0)
-    sw $a1, 1028($a0)    
     sw $a1, 33796($a0)
-    sw $a1, 1540($a0)    
     sw $a1, 34308($a0)
-    sw $a1, 2052($a0)    
     sw $a1, 34820($a0)
     jr $ra
 
 draw_2:
-    # Topo, DirCima, Meio, EsqBaixo, Baixo
-    # Limpa o que nao usa
-    addi $t3, $0, 0x000000
-    sw $t3, 512($a0)     
-    sw $t3, 33280($a0)
-    sw $t3, 1544($a0)    
-    sw $t3, 34312($a0)
-    
-    sw $a1, 0($a0)       
+    # Formato: S invertido
+    sw $a1, 0($a0)      # Topo
+    sw $a1, 4($a0)
+    sw $a1, 8($a0)
+    sw $a1, 520($a0)    # Dir Cima
+    sw $a1, 1024($a0)   # Meio
+    sw $a1, 1028($a0)
+    sw $a1, 1032($a0)
+    sw $a1, 1536($a0)   # Esq Baixo
+    sw $a1, 2048($a0)   # Base
+    sw $a1, 2052($a0)
+    sw $a1, 2056($a0)
+    # Shadow
     sw $a1, 32768($a0)
-    sw $a1, 4($a0)       
     sw $a1, 32772($a0)
-    sw $a1, 8($a0)       
     sw $a1, 32776($a0)
-    sw $a1, 520($a0)     
     sw $a1, 33288($a0)
-    sw $a1, 1024($a0)    
     sw $a1, 33792($a0)
-    sw $a1, 1028($a0)    
     sw $a1, 33796($a0)
-    sw $a1, 1032($a0)    
     sw $a1, 33800($a0)
-    sw $a1, 1536($a0)    
     sw $a1, 34304($a0)
-    sw $a1, 2048($a0)    
     sw $a1, 34816($a0)
-    sw $a1, 2052($a0)    
     sw $a1, 34820($a0)
-    sw $a1, 2056($a0)    
     sw $a1, 34824($a0)
     jr $ra
 
 draw_3:
-    # Topo, DirCima, Meio, DirBaixo, Baixo
-    addi $t3, $0, 0x000000
-    sw $t3, 512($a0)     
-    sw $t3, 33280($a0)
-    sw $t3, 1536($a0)    
-    sw $t3, 34304($a0)
-    
-    sw $a1, 0($a0)       
+    # Formato: E invertido
+    sw $a1, 0($a0)      # Topo
+    sw $a1, 4($a0)
+    sw $a1, 8($a0)
+    sw $a1, 520($a0)    # Dir
+    sw $a1, 1024($a0)   # Meio
+    sw $a1, 1028($a0)
+    sw $a1, 1032($a0)
+    sw $a1, 1544($a0)   # Dir
+    sw $a1, 2048($a0)   # Base
+    sw $a1, 2052($a0)
+    sw $a1, 2056($a0)
+    # Shadow
     sw $a1, 32768($a0)
-    sw $a1, 4($a0)       
     sw $a1, 32772($a0)
-    sw $a1, 8($a0)       
     sw $a1, 32776($a0)
-    sw $a1, 520($a0)    
     sw $a1, 33288($a0)
-    sw $a1, 1024($a0)    
     sw $a1, 33792($a0)
-    sw $a1, 1028($a0)    
     sw $a1, 33796($a0)
-    sw $a1, 1032($a0)    
     sw $a1, 33800($a0)
-    sw $a1, 1544($a0)    
     sw $a1, 34312($a0)
-    sw $a1, 2048($a0)    
     sw $a1, 34816($a0)
-    sw $a1, 2052($a0)   
     sw $a1, 34820($a0)
-    sw $a1, 2056($a0)    
     sw $a1, 34824($a0)
     jr $ra
 
 draw_4:
-    # EsqCima, Meio, DirCima, DirBaixo
-    addi $t3, $0, 0x000000
-    sw $t3, 4($a0)       
-    sw $t3, 32772($a0)
-    sw $t3, 0($a0)       
-    sw $t3, 32768($a0) # Topo esq aberto ou fechado? 4 aberto em cima
-    sw $t3, 1536($a0)    
-    sw $t3, 34304($a0)
-    sw $t3, 2048($a0)    
-    sw $t3, 34816($a0)
-    sw $t3, 2052($a0)    
-    sw $t3, 34820($a0)
-    
-    sw $a1, 0($a0)       
+    # Formato: Cadeira
+    sw $a1, 0($a0)
+    sw $a1, 8($a0)
+    sw $a1, 512($a0)
+    sw $a1, 520($a0)
+    sw $a1, 1024($a0)   # Barra Meio
+    sw $a1, 1028($a0)
+    sw $a1, 1032($a0)
+    sw $a1, 1544($a0)   # Perna Dir
+    sw $a1, 2056($a0)
+    # Shadow
     sw $a1, 32768($a0)
-    sw $a1, 8($a0)       
     sw $a1, 32776($a0)
-    sw $a1, 512($a0)     
     sw $a1, 33280($a0)
-    sw $a1, 520($a0)     
     sw $a1, 33288($a0)
-    sw $a1, 1024($a0)    
     sw $a1, 33792($a0)
-    sw $a1, 1028($a0)    
     sw $a1, 33796($a0)
-    sw $a1, 1032($a0)    
     sw $a1, 33800($a0)
-    sw $a1, 1544($a0)    
     sw $a1, 34312($a0)
-    sw $a1, 2056($a0)    
     sw $a1, 34824($a0)
     jr $ra
 
 draw_5:
-    # Topo, EsqCima, Meio, DirBaixo, Baixo
-    addi $t3, $0, 0x000000
-    sw $t3, 520($a0)  
-    sw $t3, 33288($a0)
-    sw $t3, 1536($a0)    
-    sw $t3, 34304($a0)
-    
-    sw $a1, 0($a0)       
+    # Formato: S
+    sw $a1, 0($a0)      # Topo
+    sw $a1, 4($a0)
+    sw $a1, 8($a0)
+    sw $a1, 512($a0)    # Esq Cima
+    sw $a1, 1024($a0)   # Meio
+    sw $a1, 1028($a0)
+    sw $a1, 1032($a0)
+    sw $a1, 1544($a0)   # Dir Baixo
+    sw $a1, 2048($a0)   # Base
+    sw $a1, 2052($a0)
+    sw $a1, 2056($a0)
+    # Shadow
     sw $a1, 32768($a0)
-    sw $a1, 4($a0)       
     sw $a1, 32772($a0)
-    sw $a1, 8($a0)       
     sw $a1, 32776($a0)
-    sw $a1, 512($a0)    
     sw $a1, 33280($a0)
-    sw $a1, 1024($a0)    
     sw $a1, 33792($a0)
-    sw $a1, 1028($a0)    
     sw $a1, 33796($a0)
-    sw $a1, 1032($a0)    
     sw $a1, 33800($a0)
-    sw $a1, 1544($a0)    
     sw $a1, 34312($a0)
-    sw $a1, 2048($a0)    
     sw $a1, 34816($a0)
-    sw $a1, 2052($a0)    
     sw $a1, 34820($a0)
-    sw $a1, 2056($a0)    
     sw $a1, 34824($a0)
     jr $ra
 
 draw_6:
-    addi $t3, $0, 0x000000
-    sw $t3, 520($a0)     
-    sw $t3, 33288($a0)
-    
-    sw $a1, 0($a0)       
+    # Formato: 5 com loop embaixo
+    sw $a1, 0($a0)
+    sw $a1, 4($a0)
+    sw $a1, 8($a0)
+    sw $a1, 512($a0)
+    sw $a1, 1024($a0)
+    sw $a1, 1028($a0)
+    sw $a1, 1032($a0)
+    sw $a1, 1536($a0)
+    sw $a1, 1544($a0)
+    sw $a1, 2048($a0)
+    sw $a1, 2052($a0)
+    sw $a1, 2056($a0)
+    # Shadow
     sw $a1, 32768($a0)
-    sw $a1, 4($a0)       
     sw $a1, 32772($a0)
-    sw $a1, 8($a0)       
     sw $a1, 32776($a0)
-    sw $a1, 512($a0)     
     sw $a1, 33280($a0)
-    sw $a1, 1024($a0)    
     sw $a1, 33792($a0)
-    sw $a1, 1028($a0)    
     sw $a1, 33796($a0)
-    sw $a1, 1032($a0)    
     sw $a1, 33800($a0)
-    sw $a1, 1536($a0)    
     sw $a1, 34304($a0)
-    sw $a1, 1544($a0)    
     sw $a1, 34312($a0)
-    sw $a1, 2048($a0)    
     sw $a1, 34816($a0)
-    sw $a1, 2052($a0)    
     sw $a1, 34820($a0)
-    sw $a1, 2056($a0)    
     sw $a1, 34824($a0)
     jr $ra
 
 draw_7:
-    addi $t3, $0, 0x000000
-    sw $t3, 512($a0)     
-    sw $t3, 33280($a0)
-    sw $t3, 1024($a0)    
-    sw $t3, 33792($a0)
-    sw $t3, 1028($a0)    
-    sw $t3, 33796($a0)
-    sw $t3, 1536($a0)    
-    sw $t3, 34304($a0)
-    sw $t3, 2048($a0)    
-    sw $t3, 34816($a0)
-    sw $t3, 2052($a0)    
-    sw $t3, 34820($a0)
-    
-    sw $a1, 0($a0)       
+    # Formato: Topo + Diagonal
+    sw $a1, 0($a0)
+    sw $a1, 4($a0)
+    sw $a1, 8($a0)
+    sw $a1, 520($a0)
+    sw $a1, 1032($a0)
+    sw $a1, 1544($a0)
+    sw $a1, 2056($a0)
+    # Shadow
     sw $a1, 32768($a0)
-    sw $a1, 4($a0)       
     sw $a1, 32772($a0)
-    sw $a1, 8($a0)       
     sw $a1, 32776($a0)
-    sw $a1, 520($a0)     
     sw $a1, 33288($a0)
-    sw $a1, 1032($a0)    
     sw $a1, 33800($a0)
-    sw $a1, 1544($a0)    
     sw $a1, 34312($a0)
-    sw $a1, 2056($a0)    
     sw $a1, 34824($a0)
     jr $ra
 
 draw_8:
-    # Tudo preenchido exceto meio centro? (8 full)
-    # A logica do 0 ja limpa o meio, o 8 desenha o meio.
-    sw $a1, 0($a0)       
+    # Formato: Todos acesos menos miolo
+    sw $a1, 0($a0)
+    sw $a1, 4($a0)
+    sw $a1, 8($a0)
+    sw $a1, 512($a0)
+    sw $a1, 520($a0)
+    sw $a1, 1024($a0)
+    sw $a1, 1028($a0)
+    sw $a1, 1032($a0)
+    sw $a1, 1536($a0)
+    sw $a1, 1544($a0)
+    sw $a1, 2048($a0)
+    sw $a1, 2052($a0)
+    sw $a1, 2056($a0)
+    # Shadow
     sw $a1, 32768($a0)
-    sw $a1, 4($a0)       
     sw $a1, 32772($a0)
-    sw $a1, 8($a0)       
     sw $a1, 32776($a0)
-    sw $a1, 512($a0)     
     sw $a1, 33280($a0)
-    sw $a1, 520($a0)     
     sw $a1, 33288($a0)
-    sw $a1, 1024($a0)    
     sw $a1, 33792($a0)
-    sw $a1, 1028($a0)    
     sw $a1, 33796($a0)
-    sw $a1, 1032($a0)    
     sw $a1, 33800($a0)
-    sw $a1, 1536($a0)    
     sw $a1, 34304($a0)
-    sw $a1, 1544($a0)    
     sw $a1, 34312($a0)
-    sw $a1, 2048($a0)    
     sw $a1, 34816($a0)
-    sw $a1, 2052($a0)    
     sw $a1, 34820($a0)
-    sw $a1, 2056($a0)    
     sw $a1, 34824($a0)
     jr $ra
 
 draw_9:
-    addi $t3, $0, 0x000000
-    sw $t3, 1536($a0)    
-    sw $t3, 34304($a0)
-    
-    sw $a1, 0($a0)       
+    # Formato: Loop em cima, desce reto
+    sw $a1, 0($a0)
+    sw $a1, 4($a0)
+    sw $a1, 8($a0)
+    sw $a1, 512($a0)
+    sw $a1, 520($a0)
+    sw $a1, 1024($a0)
+    sw $a1, 1028($a0)
+    sw $a1, 1032($a0)
+    sw $a1, 1544($a0)
+    sw $a1, 2056($a0)
+    # Shadow
     sw $a1, 32768($a0)
-    sw $a1, 4($a0)       
     sw $a1, 32772($a0)
-    sw $a1, 8($a0)       
     sw $a1, 32776($a0)
-    sw $a1, 512($a0)     
     sw $a1, 33280($a0)
-    sw $a1, 520($a0)     
     sw $a1, 33288($a0)
-    sw $a1, 1024($a0)    
     sw $a1, 33792($a0)
-    sw $a1, 1028($a0)    
     sw $a1, 33796($a0)
-    sw $a1, 1032($a0)    
     sw $a1, 33800($a0)
-    sw $a1, 1544($a0)    
     sw $a1, 34312($a0)
-    sw $a1, 2048($a0)    
-    sw $a1, 34816($a0)
-    sw $a1, 2052($a0)    
-    sw $a1, 34820($a0)
-    sw $a1, 2056($a0)    
     sw $a1, 34824($a0)
     jr $ra
 
-# --- ROTINAS DE DESENHO DA NAVE (MANTIDAS) ---
+# ROTINAS DE DESENHO DA NAVE (MANTIDAS)
 
 nave_cima:
     addi $t8, $0, -512      # Define Direção
@@ -1228,7 +1211,7 @@ nave_se:
     sw $9, 4($20)
     j delay
 
-# --- UPDATE BALA ---
+# UPDATE BALA
 update_bala:
     add $t9, $ra, $0        # Salva retorno
     
@@ -1305,7 +1288,7 @@ destroi_bala:
     add $s6, $0, $0
     jr $t9
 
-# --- COLISÃO NAVE (Perde Vida) ---
+# COLISÃO NAVE (Perde Vida)
 colisao_nave:
     addi $v1, $v1, -1
     
@@ -1344,7 +1327,7 @@ colisao_nave:
     
     j reset_fase 
 
-# --- DESENHO ASTEROIDE ---
+# DESENHO ASTEROIDE
 desenha_bloco_comum_interno:
 	addi $20, $a0, 32768
 	sw $9, 4($a0)   
@@ -1381,7 +1364,7 @@ desenha_bloco_comum_interno:
 	sw $9, 2576($20)
 	jr $ra
 
-# --- APAGA NAVE (Área Limpa) ---
+# APAGA NAVE (Área Limpa)
 pinta_quadrado_centro:
 	addi $8, $s0, -512      
 	addi $20, $8, 32768
@@ -1415,7 +1398,7 @@ pinta_quadrado_centro:
 	
 	jr $ra
 
-# --- APAGA CORAÇÃO ---
+# APAGA CORAÇÃO
 desenha_bloco_coracao_preto:
     addi $20, $a0, 32768 
     sw $9, 4($a0)   
