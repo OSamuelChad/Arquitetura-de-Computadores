@@ -735,6 +735,15 @@ atirar:
     add $s6, $s0, $0       
     add $s7, $t8, $0       
     add $s4, $0, $0        
+
+            # --- EFEITO SONORO DO TIRO ---
+    li $v0, 31             
+    li $a0, 95             
+    li $a1, 70              # Duração: 70ms 
+    li $a2, 80             
+    li $a3, 127            
+    syscall
+
     j delay
 
 # LÓGICA DE DESENHO DO PLACAR (NUMÉRICO)
@@ -800,6 +809,7 @@ loop_clear_digit:
     j loop_clear_digit
 end_clear_digit:
     jr $ra
+    
 # ----------------------------------------
 
 draw_digit_selector:
@@ -827,7 +837,7 @@ draw_digit_selector:
     jr $ra
 
 # ==========================================
-# SPRITES NUMÉRICOS 3x5 (ESTILO ARCADE)
+# SPRITES NUMÉRICOS 3x5 
 # ==========================================
 
 draw_0:
@@ -1364,7 +1374,8 @@ desenha_bloco_comum_interno:
 	sw $9, 2576($20)
 	jr $ra
 
-# APAGA NAVE (Área Limpa)
+# APAGA NAVE 
+
 pinta_quadrado_centro:
 	addi $8, $s0, -512      
 	addi $20, $8, 32768
@@ -1458,5 +1469,30 @@ desenha_bloco_coracao_preto:
     jr $ra
 
 fimJogo:
-	addi $v0, $0, 10
-	syscall
+    # --- MELODIA DE GAME OVER (Descendente) ---
+    li $v0, 33             
+    li $a2, 80             
+    li $a3, 100            
+
+    # Nota 1
+    li $a0, 62             # Nota Ré
+    li $a1, 400            # Duração
+    syscall
+
+    # Nota 2
+    li $a0, 58             # Nota Sib
+    li $a1, 400
+    syscall
+
+    # Nota 3
+    li $a0, 55             # Nota Sol
+    li $a1, 400
+    syscall
+
+    li $a0, 43             # Nota Sol (Oitava abaixo)
+    li $a1, 1200           
+    syscall
+
+    # Encerra o programa
+    addi $v0, $0, 10
+    syscall
